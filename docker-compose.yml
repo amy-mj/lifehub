@@ -1,0 +1,97 @@
+# LifeHub — cafe24 CentOS 7.9 전용 compose
+#
+# ⚠️ 이 서버에는 cafe24 가 관리하는 컨테이너가 이미 돌고 있습니다:
+#      common-nginx (80/443) · common-php83/82/84 · common-redis (6379)
+#    절대 `docker compose down` 을 다른 디렉터리에서 실행하거나,
+#    `docker system prune -a` 를 쓰지 마세요. PHP 사이트가 함께 죽습니다.
+#
+# 그래서 이 파일은 다음을 지킵니다:
+#   1) 프로젝트 이름을 lifehub 로 고정 → cafe24 컨테이너와 절대 섞이지 않음
+#   2) 80/443 을 쓰지 않음 (이미 common-nginx 가 점유) → 기본 3000
+#   3) 메모리 상한 → 우리 앱이 폭주해도 cafe24 PHP 를 굶기지 않음
+#   4) 볼륨은 bind mount(./data) → `down -v` 로도 데이터가 지워지지 않음
+
+name: lifehub
+
+# ⚠️ 위 `name:` 은 compose v2 전용입니다. 혹시 v1 이면 에러가 나므로
+#    .env 에 COMPOSE_PROJECT_NAME=lifehub 를 넣어두면 v1/v2 모두 동작합니다.
+#    (v1 에서 `name` 관련 에러가 나면 위 name: 줄을 지우고 .env 값만 쓰세요)
+
+services:
+  lifehub:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lifehub-py:latest
+    container_name: lifehub-py
+    restart: unless-stopped
+
+    # ── 소유권 매핑 (중요) ─────────────────────────────────────
+    # 컨테이너 안의 앱은 uid 1000 으로 돕니다. 그런데 ./data 는 "호스트 사용자"
+    # 소유입니다. 호스트 mj 의 uid 가 1000 이 아니면 SQLite 가 DB 파일을
+    # 만들지 못해 "unable to open database file" 로 죽습니다.
+    #
+    #   확인:  id -u          (1000 이 아니면 .env 에 LIFEHUB_UID 를 지정)
+    #   .env:  LIFEHUB_UID=501
+    #          LIFEHUB_GID=501
+    user: "${LIFEHUB_UID:-1000}:${LIFEHUB_GID:-1000}"
+
+    ports:
+      # ⚠️ 80/443 은 common-nginx 가 이미 사용 중입니다. 반드시 3000 이상을 쓰세요.
+      #    외부에 80 으로 노출하려면 아래 "nginx 프록시" 절을 참고하세요.
+      - "${HOST_PORT:-3000}:3000"
+
+    environment:
+      # ⚠️ 운영에서는 반드시 .env 의 값으로 교체하세요 (기본값 사용 금지)
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 을 .env 에 설정하세요}
+      APP_NAME: ${APP_NAME:-LifeHub 개인 관리}
+      PORT: 3000
+      DB_PATH: /data/lifehub.db
+      # 데모 데이터를 넣고 싶으면 1 (데모 계정이 없을 때만 주입)
+      SEED_DEMO: ${SEED_DEMO:-0}
+      # 날짜 계산이 UTC 기준이므로 컨테이너도 UTC 로 고정합니다.
+      TZ: ${TZ:-UTC}
+
+    # ── 메모리 상한 ────────────────────────────────────────────
+    # 이 서버는 RAM 990MB 에 cafe24 컨테이너가 이미 469MB 를 쓰고 있습니다.
+    # 우리 앱은 실측 58MB 면 충분하지만, 만일의 폭주가 PHP 를 굶기지 않도록
+    # 상한을 둡니다. (swap 4GB 가 받쳐주므로 여유는 충분)
+    mem_limit: 512m
+    memswap_limit: 1g
+
+    volumes:
+      # DB 는 반드시 호스트 볼륨에 보존 (컨테이너 재생성 시 데이터 유지)
+      - ./data:/data
+
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - |
+          import urllib.request, sys
+          sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:3000/api/health', timeout=4).status == 200 else 1)
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+    # 로그가 디스크를 먹지 않도록 상한 (최대 30MB)
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ─────────────────────────────────────────────────────────────
+# nginx 프록시로 80 에 붙이고 싶다면 (선택)
+# ─────────────────────────────────────────────────────────────
+#   sudo 없이 가능한지는 cafe24 nginx 설정 경로가 쓰기 가능한지에 달려 있습니다.
+#   아래 명령으로 확인하세요:
+#
+#     docker inspect common-nginx --format '{{json .Mounts}}'
+#
+#   쓰기 가능한 conf 디렉터리가 보이면 그 안에 프록시 설정을 추가하고
+#   `docker exec common-nginx nginx -s reload` 로 반영할 수 있습니다.
+#   (설정 경로가 root 소유라 쓰기 불가하면, cafe24 고객센터에 문의하거나
+#    3000 포트 그대로 쓰시는 게 가장 안전합니다.)

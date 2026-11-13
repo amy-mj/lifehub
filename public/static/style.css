@@ -1,0 +1,81 @@
+:root {
+  --accent: #6366f1;
+}
+* { -webkit-tap-highlight-color: transparent; }
+body { font-family: 'Pretendard', system-ui, -apple-system, sans-serif; }
+
+/* 스크롤바 */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* 달력 그리드 */
+.cal-cell { min-height: 96px; }
+@media (max-width: 768px) { .cal-cell { min-height: 64px; } }
+
+/* 잔디(습관) 히트맵 */
+.grass-cell { width: 13px; height: 13px; border-radius: 3px; }
+
+/* 카드 호버 */
+.card { transition: transform .15s ease, box-shadow .15s ease; }
+.card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(15,23,42,.08); }
+
+/* 애니메이션 */
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.view-enter { animation: fadeInUp .25s ease both; }
+.toast-item { animation: fadeInUp .2s ease both; }
+
+/* 라인 클램프 */
+.clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* 다크 모드 */
+.dark body { background: #0f172a; color: #e2e8f0; }
+.dark .bg-white { background: #1e293b !important; }
+.dark .bg-slate-50 { background: #0f172a !important; }
+.dark .bg-slate-100 { background: #334155 !important; }
+.dark .text-slate-800, .dark .text-slate-700, .dark .text-slate-900 { color: #e2e8f0 !important; }
+.dark .text-slate-500, .dark .text-slate-600 { color: #94a3b8 !important; }
+.dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+.dark input, .dark textarea, .dark select { background: #0f172a !important; color: #e2e8f0 !important; border-color: #334155 !important; }
+
+/* 폰트 크기 */
+.font-small { font-size: 13px; }
+.font-medium { font-size: 15px; }
+.font-large { font-size: 17px; }
+
+/* 리치 텍스트 에디터 */
+.rte-btn {
+  width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 8px; color: #475569; font-size: 13px; background: transparent; border: none; cursor: pointer;
+  transition: background .12s ease;
+}
+.rte-btn:hover { background: #e2e8f0; }
+.rte-editor { line-height: 1.65; }
+.rte-editor:empty::before { content: attr(data-ph); color: #94a3b8; pointer-events: none; }
+.rte-editor:focus { border-color: var(--accent) !important; }
+.rte-editor blockquote { border-left: 3px solid #cbd5e1; margin: 6px 0; padding-left: 10px; color: #64748b; }
+.rte-editor ul { list-style: disc; padding-left: 22px; margin: 6px 0; }
+.rte-editor ol { list-style: decimal; padding-left: 22px; margin: 6px 0; }
+.rte-editor a { color: #0284c7; text-decoration: underline; }
+.rte-editor h1, .rte-editor h2, .rte-editor h3 { font-weight: 700; margin: 8px 0 4px; }
+.rte-editor h2 { font-size: 1.2em; }
+
+/* 메모 상세 콘텐츠 렌더링 */
+.note-content { color: inherit; word-break: break-word; }
+.note-content p { margin: 0 0 8px; }
+.note-content h1, .note-content h2, .note-content h3 { font-weight: 700; margin: 12px 0 6px; }
+.note-content ul { list-style: disc; padding-left: 22px; margin: 6px 0; }
+.note-content ol { list-style: decimal; padding-left: 22px; margin: 6px 0; }
+.note-content blockquote { border-left: 3px solid #cbd5e1; margin: 8px 0; padding-left: 12px; color: #64748b; }
+.note-content a { color: #0284c7; text-decoration: underline; word-break: break-all; }
+.note-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 6px 0; }
+.note-content code { background: #f1f5f9; padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+.dark .note-content code { background: #334155; }
+
+/* 다크 모드 — 에디터 */
+.dark .rte-toolbar { background: #0f172a !important; border-color: #334155 !important; }
+.dark .rte-btn { color: #cbd5e1; }
+.dark .rte-btn:hover { background: #334155; }
+.dark .rte-editor { background: #0f172a !important; color: #e2e8f0 !important; border-color: #334155 !important; }
+.dark .rte-editor blockquote, .dark .note-content blockquote { border-color: #475569; }
